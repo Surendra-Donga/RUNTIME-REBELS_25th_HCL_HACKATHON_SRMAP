@@ -36,7 +36,7 @@ The application follows a **Modular Monolith Architecture** with a clear separat
 The database is structured to support complex relationships between users, hotels, rooms, and bookings.
 *   **Users**: Stores credentials and profiles for all roles (USER, OWNER, ADMIN).
 *   **Hotels & Rooms**: Maintains hotel metadata and room availability.
-*   **Bookings & Payments**: Tracks transaction history and reservation states.
+*   **Bookings**: Tracks reservation states.
 *   **Reviews**: Captures guest feedback and ratings.
 
 ---
@@ -46,7 +46,6 @@ The database is structured to support complex relationships between users, hotel
 ### 👤 USER
 *   **Discovery**: Search hotels with advanced filtering (location, price, amenities).
 *   **Booking**: Real-time room booking and reservation management.
-*   **Payment**: Secure transaction processing.
 *   **History**: Comprehensive view of past and upcoming bookings.
 
 ### 🏨 OWNER
@@ -65,8 +64,8 @@ The database is structured to support complex relationships between users, hotel
 
 ### 🧑‍💻 Vamsi (Infrastructure & Transactions)
 Responsible for the system's backbone, security, and financial transaction pipeline.
-*   **Packages**: `config/`, `controller/` (Auth, Booking, Payment), `services/` (Auth, Booking, Payment, JWT, Email), `repositories/`, `exception/`, `util/`, `model/` (Infrastructure entities).
-*   **Key Modules**: JWT Implementation, Security Filter Chain, Booking/Payment logic, Global Exception Handling.
+*   **Packages**: `config/`, `controller/` (Auth, Booking), `services/` (Auth, Booking, JWT, Email), `repositories/`, `exception/`, `util/`, `model/` (Infrastructure entities).
+*   **Key Modules**: JWT Implementation, Security Filter Chain, Booking logic, Global Exception Handling.
 
 ### 🧑‍💻 Jayanth (Domain Implementation)
 Responsible for the core hotel discovery and management features.
@@ -81,7 +80,6 @@ Responsible for the core hotel discovery and management features.
 | :--- | :--- | :--- | :--- |
 | **Security/Auth** | AuthController | AuthService, JWT, UserDetails | UserRepo |
 | **Booking** | BookingController | BookingService | BookingRepo |
-| **Payment** | PaymentController | PaymentService | PaymentRepo |
 | **Hotel/Room** | *Jayanth Implementation* | *Jayanth Implementation* | *Shared Repo* |
 | **Admin/Owner** | *Jayanth Implementation* | *Jayanth Implementation* | *Shared Repo* |
 | **Email/Util** | - | EmailService | - |

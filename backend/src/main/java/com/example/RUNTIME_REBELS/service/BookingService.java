@@ -46,7 +46,7 @@ public class BookingService {
         // Send confirmation email
         emailService.sendEmail(user.getEmail(), "Booking Initiated", 
             "Your booking for " + booking.getRoom().getRoomType() + " at " + 
-            booking.getRoom().getHotel().getHotelName() + " is initiated. Please complete the payment.");
+            booking.getRoom().getHotel().getHotelName() + " is initiated.");
 
         return savedBooking;
     }
