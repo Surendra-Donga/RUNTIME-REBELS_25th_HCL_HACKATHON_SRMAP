@@ -9,13 +9,13 @@ export const authService = {
   },
 
   login: async (credentials: any) => {
-    const token = await apiFetch('/auth/login', {
+    const response = await apiFetch('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
+    const token = response.data;
     if (token) {
       localStorage.setItem('token', token);
-      // We might want to decode the token to get user info or role
     }
     return token;
   },

@@ -20,16 +20,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ room, isOpen, onClose }) =>
   const handleBooking = async () => {
     setIsBooking(true);
     try {
-      // Mock user for now. In a real app, get this from auth context/token
-      const mockUser = { userId: 1 }; 
-      
       const bookingData = {
-        user: mockUser,
         room: { roomId: room.id },
-        check_In_Date: checkIn,
-        check_Out_Date: checkOut,
-        total_Price: room.price * 4, // Simplified night calculation
-        booking_Status: 'CONFIRMED'
+        checkIn: checkIn,
+        checkOut: checkOut,
+        totalPrice: room.price * 4 // Simplified night calculation
       };
 
       await bookingService.createBooking(bookingData);

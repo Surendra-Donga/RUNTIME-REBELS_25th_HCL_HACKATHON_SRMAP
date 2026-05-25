@@ -10,7 +10,7 @@ interface SignInProps {
 
 import { authService } from '../services/authService';
 
-const SignIn: React.FC<SignInProps & { setView: (v: any) => void }> = ({ onSwitch, onBack, onOwnerLogin, setView }) => {
+const SignIn: React.FC<SignInProps & { setView: (v: any) => void }> = ({ onSwitch, onBack, setView }) => {
   const [loginMode, setLoginMode] = useState<'user' | 'owner' | 'admin'>('user');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

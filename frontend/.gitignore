@@ -25,3 +25,6 @@ dist-ssr
 
 db.txt
 WhatsApp Image*.jpeg
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts

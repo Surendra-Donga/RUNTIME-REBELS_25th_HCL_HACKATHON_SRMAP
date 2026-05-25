@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, MapPin, ChevronDown, Trees, Waves, Sparkles, Compass } from 'lucide-react';
+import { Search, MapPin, ChevronDown, Trees, Waves, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeroBackground from '../components/HeroBackground';
 import SideNavbar from '../components/SideNavbar';
@@ -47,9 +47,10 @@ const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
 
   const fetchUserBookings = async () => {
     try {
-      // Mock user ID 1
-      const data = await bookingService.getUserBookings(1);
-      setUserBookings(data);
+      const data = await bookingService.getMyBookings();
+      // The backend returns an ApiResponse wrapper for some endpoints
+      const bookings = data.data || data;
+      setUserBookings(bookings);
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
     }

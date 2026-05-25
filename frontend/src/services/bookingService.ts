@@ -2,10 +2,14 @@ import { apiFetch } from './api';
 
 export const bookingService = {
   createBooking: async (bookingData: any) => {
-    return apiFetch('/bookings', {
+    return apiFetch('/bookings/create', {
       method: 'POST',
       body: JSON.stringify(bookingData),
     });
+  },
+
+  getMyBookings: async () => {
+    return apiFetch('/bookings/my');
   },
 
   getUserBookings: async (userId: number) => {

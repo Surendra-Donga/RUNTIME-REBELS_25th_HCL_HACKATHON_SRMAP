@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  LayoutDashboard, CheckCircle2, XCircle, 
+  CheckCircle2, XCircle, 
   Hotel, Users, LogOut, ShieldCheck
 } from 'lucide-react';
 import { apiFetch } from '../services/api';
