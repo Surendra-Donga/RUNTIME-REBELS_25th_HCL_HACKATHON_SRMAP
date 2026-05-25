@@ -26,6 +26,9 @@ public class AuthService {
     private AuthenticationManager authManager;
 
     public Users register(Users user) {
+        if (user.getAge() < 18) {
+            throw new RuntimeException("User must be at least 18 years old to register.");
+        }
         user.setPassword(encoder.encode(user.getPassword()));
         if (user.getRole() == null) {
             user.setRole(Role.USER);

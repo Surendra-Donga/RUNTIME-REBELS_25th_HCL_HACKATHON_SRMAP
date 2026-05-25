@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle2 } from 'lucide-react';
+import { bookingService } from '../services/bookingService';
 
 interface BookingModalProps {
   room: any;
@@ -10,7 +11,36 @@ interface BookingModalProps {
 
 const BookingModal: React.FC<BookingModalProps> = ({ room, isOpen, onClose }) => {
   const [step, setStep] = useState(1);
+  const [checkIn, setCheckIn] = useState('2024-06-01');
+  const [checkOut, setCheckOut] = useState('2024-06-05');
+  const [isBooking, setIsBooking] = useState(false);
+
   if (!isOpen || !room) return null;
+
+  const handleBooking = async () => {
+    setIsBooking(true);
+    try {
+      // Mock user for now. In a real app, get this from auth context/token
+      const mockUser = { userId: 1 }; 
+      
+      const bookingData = {
+        user: mockUser,
+        room: { roomId: room.id },
+        check_In_Date: checkIn,
+        check_Out_Date: checkOut,
+        total_Price: room.price * 4, // Simplified night calculation
+        booking_Status: 'CONFIRMED'
+      };
+
+      await bookingService.createBooking(bookingData);
+      setStep(2);
+    } catch (error) {
+      console.error('Booking failed:', error);
+      alert('Booking failed. Please try again.');
+    } finally {
+      setIsBooking(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -29,11 +59,21 @@ const BookingModal: React.FC<BookingModalProps> = ({ room, isOpen, onClose }) =>
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Check In</label>
-                <input type="date" className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-red-100 outline-none" defaultValue="2024-06-01" />
+                <input 
+                  type="date" 
+                  className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-red-100 outline-none" 
+                  value={checkIn}
+                  onChange={(e) => setCheckIn(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Check Out</label>
-                <input type="date" className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-red-100 outline-none" defaultValue="2024-06-05" />
+                <input 
+                  type="date" 
+                  className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-red-100 outline-none" 
+                  value={checkOut}
+                  onChange={(e) => setCheckOut(e.target.value)}
+                />
               </div>
             </div>
 
@@ -45,8 +85,12 @@ const BookingModal: React.FC<BookingModalProps> = ({ room, isOpen, onClose }) =>
               <p className="text-slate-500 font-bold">4 Nights</p>
             </div>
 
-            <button onClick={() => setStep(2)} className={`w-full py-4 text-white rounded-2xl font-black shadow-xl transition-all active:scale-95 ${room.color === 'emerald' ? 'bg-emerald-600' : room.color === 'amber' ? 'bg-amber-600' : 'bg-indigo-600'}`}>
-              CONFIRM BOOKING
+            <button 
+              onClick={handleBooking} 
+              disabled={isBooking}
+              className={`w-full py-4 text-white rounded-2xl font-black shadow-xl transition-all active:scale-95 ${isBooking ? 'opacity-50' : ''} ${room.color === 'emerald' ? 'bg-emerald-600' : room.color === 'amber' ? 'bg-amber-600' : 'bg-indigo-600'}`}
+            >
+              {isBooking ? 'PROCESSING...' : 'CONFIRM BOOKING'}
             </button>
           </>
         ) : (

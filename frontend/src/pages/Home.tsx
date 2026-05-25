@@ -5,6 +5,10 @@ import HeroBackground from '../components/HeroBackground';
 import SideNavbar from '../components/SideNavbar';
 import RoomCard from '../components/RoomCard';
 import BookingModal from '../components/BookingModal';
+import ExtensionModal from '../components/ExtensionModal';
+
+import { roomService } from '../services/roomService';
+import { bookingService } from '../services/bookingService';
 
 const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
   const [activeView, setActiveView] = useState('home');
@@ -13,17 +17,53 @@ const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [vibeFilter, setVibeFilter] = useState('All');
   const [bookingRoom, setBookingRoom] = useState<any>(null);
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [userBookings, setUserBookings] = useState<any[]>([]);
+  const [extendingBooking, setExtendingBooking] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const locations = ['Bali, Indonesia', 'Swiss Alps, Switzerland', 'Santorini, Greece', 'Kyoto, Japan', 'Banff, Canada'];
   
-  const rooms = [
-    { type: 'Nature', price: 15000, rating: 4.9, occupancy: 2, amenities: ['Forest View', 'Eco-Smart', 'Solar'], color: 'emerald' as const, icon: Trees, location: 'Bali, Indonesia', vibe: 'Nature' },
-    { type: 'Coastal', price: 28000, rating: 4.8, occupancy: 2, amenities: ['Ocean Front', 'Infinity Pool'], color: 'indigo' as const, icon: Waves, location: 'Santorini, Greece', vibe: 'Coastal' },
-    { type: 'Elite', price: 65000, rating: 5.0, occupancy: 4, amenities: ['Butler', 'Private Jet', 'Heli-Pad'], color: 'amber' as const, icon: Sparkles, location: 'Swiss Alps, Switzerland', vibe: 'Luxury' },
-    { type: 'Forest', price: 18000, rating: 4.7, occupancy: 2, amenities: ['Treehouse', 'Hammock', 'Firepit'], color: 'emerald' as const, icon: Trees, location: 'Banff, Canada', vibe: 'Nature' },
-    { type: 'Urban', price: 42000, rating: 4.9, occupancy: 3, amenities: ['Penthouse', 'City Views', 'Smart Home'], color: 'indigo' as const, icon: Compass, location: 'Kyoto, Japan', vibe: 'Urban' }
-  ];
+  const fetchRooms = async () => {
+    try {
+      const data = await roomService.getAllRooms();
+      const mappedRooms = data.map((room: any) => ({
+        id: room.roomId,
+        type: room.roomType,
+        price: room.pricePerNight,
+        rating: room.hotel?.rating || 4.5,
+        occupancy: 2, 
+        amenities: room.hotel?.amenities ? room.hotel.amenities.split(',') : ['Free WiFi', 'AC'],
+        color: room.roomType === 'Elite' ? 'amber' : room.roomType === 'Coastal' ? 'indigo' : 'emerald',
+        icon: room.roomType === 'Elite' ? Sparkles : room.roomType === 'Coastal' ? Waves : Trees,
+        location: room.hotel?.location || 'Unknown',
+        vibe: room.roomType === 'Elite' ? 'Luxury' : room.roomType === 'Coastal' ? 'Coastal' : 'Nature'
+      }));
+      setRooms(mappedRooms);
+    } catch (error) {
+      console.error('Failed to fetch rooms:', error);
+    }
+  };
+
+  const fetchUserBookings = async () => {
+    try {
+      // Mock user ID 1
+      const data = await bookingService.getUserBookings(1);
+      setUserBookings(data);
+    } catch (error) {
+      console.error('Failed to fetch bookings:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRooms();
+  }, []);
+
+  useEffect(() => {
+    if (activeView === 'bookings') {
+      fetchUserBookings();
+    }
+  }, [activeView]);
 
   const filteredRooms = useMemo(() => {
     return rooms.filter(room => {
@@ -33,7 +73,7 @@ const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
       const matchesLocation = room.location === selectedLocation;
       return matchesVibe && (searchQuery ? matchesSearch : matchesLocation);
     });
-  }, [vibeFilter, searchQuery, selectedLocation]);
+  }, [vibeFilter, searchQuery, selectedLocation, rooms]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -112,9 +152,37 @@ const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
 
         {activeView === 'bookings' && (
           <section className="px-12 py-20">
-            <h1 className="text-6xl font-black text-slate-900 mb-8">My Bookings</h1>
-            <div className="bg-white/60 backdrop-blur-lg border border-white p-12 rounded-[3rem] text-center">
-              <h2 className="text-2xl font-black text-slate-900 mb-2 text-nowrap uppercase tracking-widest opacity-20">Coming Soon</h2>
+            <h1 className="text-6xl font-black text-slate-900 mb-8 tracking-tighter uppercase">My Bookings</h1>
+            <div className="grid grid-cols-1 gap-6">
+              {userBookings.map((booking) => (
+                <div key={booking.booking_Id} className="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-white flex justify-between items-center shadow-sm">
+                  <div>
+                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md mb-2 inline-block uppercase tracking-widest">{booking.room.roomType}</span>
+                    <h3 className="text-2xl font-black text-slate-900">{booking.room.hotel.hotelName}</h3>
+                    <div className="flex space-x-4 mt-2 text-sm font-bold text-slate-500">
+                      <p>IN: {booking.check_In_Date}</p>
+                      <p>OUT: {booking.check_Out_Date}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-6">
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-slate-400 uppercase">Total Paid</p>
+                      <p className="text-2xl font-black text-slate-900">₹{booking.total_Price.toLocaleString('en-IN')}</p>
+                    </div>
+                    <button 
+                      onClick={() => setExtendingBooking(booking)}
+                      className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all active:scale-95 uppercase text-xs tracking-widest"
+                    >
+                      Extend
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {userBookings.length === 0 && (
+                <div className="bg-white/40 backdrop-blur-lg border border-dashed border-slate-200 p-20 rounded-[3rem] text-center">
+                  <p className="text-slate-400 font-bold text-xl italic uppercase tracking-widest opacity-50">No bookings yet. Start your adventure.</p>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -122,6 +190,14 @@ const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
 
       <AnimatePresence>
         {bookingRoom && <BookingModal room={bookingRoom} isOpen={!!bookingRoom} onClose={() => setBookingRoom(null)} />}
+        {extendingBooking && (
+          <ExtensionModal 
+            booking={extendingBooking} 
+            isOpen={!!extendingBooking} 
+            onClose={() => setExtendingBooking(null)} 
+            onSuccess={fetchUserBookings}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
