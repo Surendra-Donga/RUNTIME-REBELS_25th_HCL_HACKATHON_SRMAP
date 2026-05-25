@@ -14,7 +14,7 @@ export const authService = {
       body: JSON.stringify(credentials),
     });
     
-    // The backend now returns { token, username, role } inside data
+    // The backend returns { token, username, role } inside data
     const loginData = response.data;
     
     if (loginData && loginData.token) {
@@ -26,9 +26,7 @@ export const authService = {
   },
 
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('username');
+    localStorage.clear(); // Wipe everything on logout
   },
 
   isAuthenticated: () => {
@@ -37,5 +35,9 @@ export const authService = {
 
   getRole: () => {
     return localStorage.getItem('role');
+  },
+
+  getUsername: () => {
+    return localStorage.getItem('username');
   }
 };
