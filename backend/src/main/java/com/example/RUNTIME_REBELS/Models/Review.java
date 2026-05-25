@@ -10,29 +10,27 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
-public class Users {
+@Table(name = "reviews")
+public class Review {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;
+    private Long reviewId;
 
-    @Column(nullable = false, unique = true)
-    private String username;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private Users user;
 
-    @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    @Column(nullable = false)
-    private int age;
+    @ManyToOne
+    @JoinColumn(name = "hotel_id", nullable = false)
+    private Hotels hotel;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private Role role;
+    private int rating;
+
+    @Column(length = 1000)
+    private String comment;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
-
 }

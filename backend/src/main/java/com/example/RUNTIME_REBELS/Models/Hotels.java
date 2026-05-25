@@ -15,24 +15,31 @@ public class Hotels {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Hotel_Id;
+    private Long hotelId;
 
     @Column(nullable = false)
-    private String Hotel_Name;
+    private String hotelName;
 
     @Column(nullable = false)
-    private String Location;
+    private String location;
 
     @Column(length = 1000)
-    private String Description;
+    private String description;
 
     @Column(nullable = false)
-    private int Rating;
+    private int rating;
 
     @Column(nullable = false)
-    private String Amenities;
-    
+    private String amenities;
+
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private Users owner;
+
     @Column(nullable = false)
-    private LocalDateTime Created_At;
+    private boolean approved = false;
+
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
 
 }

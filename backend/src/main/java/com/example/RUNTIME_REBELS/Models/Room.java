@@ -14,18 +14,18 @@ public class Room {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Room_Id;
+    private Long roomId;
 
     @Column(nullable = false)
-    private String Room_Type;
+    private String roomType;
 
     @Column(nullable = false)
-    private double Price_Per_Night;
+    private double pricePerNight;
 
     @Column(nullable = false)
-    private boolean Availability;
+    private boolean availability;
 
     @ManyToOne
-    @JoinColumn(name = "Hotel_Id", nullable = false)
+    @JoinColumn(name = "hotel_id", nullable = false)
     private Hotels hotel;
 }

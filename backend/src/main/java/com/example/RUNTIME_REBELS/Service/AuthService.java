@@ -30,7 +30,7 @@ public class AuthService {
         if (user.getRole() == null) {
             user.setRole(Role.USER);
         }
-        user.setCreated_at(LocalDateTime.now());
+        user.setCreatedAt(LocalDateTime.now());
         return userRepo.save(user);
     }
 
