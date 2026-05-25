@@ -5,6 +5,10 @@ export const roomService = {
     return apiFetch('/rooms');
   },
 
+  getMyRooms: async () => {
+    return apiFetch('/rooms/my-rooms');
+  },
+
   getRoomsByHotel: async (hotelId: number) => {
     return apiFetch(`/rooms/hotel/${hotelId}`);
   },

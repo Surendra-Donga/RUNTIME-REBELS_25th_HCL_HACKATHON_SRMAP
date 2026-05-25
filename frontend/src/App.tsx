@@ -9,61 +9,67 @@ import { authService } from './services/authService'
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(authService.isAuthenticated());
   const [userRole, setUserRole] = useState(authService.getRole());
-  const [view, setView] = useState<'home' | 'signin' | 'signup' | 'owner' | 'admin'>('home');
+  const [view, setView] = useState<'auth' | 'home' | 'owner' | 'admin'>('home');
+  const [authSubView, setAuthSubView] = useState<'signin' | 'signup'>('signin');
 
-  // Sync state on mount and login
-  useEffect(() => {
+  const updateRouting = () => {
     const authStatus = authService.isAuthenticated();
-    setIsAuthenticated(authStatus);
     const role = authService.getRole();
+    
+    setIsAuthenticated(authStatus);
     setUserRole(role);
 
     if (!authStatus) {
-      setView('signin');
+      setView('auth');
     } else {
       if (role === 'ADMIN') setView('admin');
       else if (role === 'OWNER') setView('owner');
       else setView('home');
     }
+  };
+
+  // On mount, set correct view
+  useEffect(() => {
+    updateRouting();
   }, []);
 
   const handleLoginSuccess = (loginData: any) => {
-    setIsAuthenticated(true);
-    setUserRole(loginData.role);
-    
-    if (loginData.role === 'ADMIN') setView('admin');
-    else if (loginData.role === 'OWNER') setView('owner');
-    else setView('home');
+    localStorage.setItem('token', loginData.token);
+    localStorage.setItem('role', loginData.role);
+    localStorage.setItem('username', loginData.username);
+    updateRouting();
   };
 
   const handleLogout = () => {
     authService.logout();
-    setIsAuthenticated(false);
-    setUserRole(null);
-    setView('signin');
+    updateRouting();
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* AUTHENTICATION PAGES */}
-      {!isAuthenticated && view === 'signin' && (
-        <SignIn 
-          onSwitch={() => setView('signup')} 
-          onBack={() => setView('home')} 
-          onLoginSuccess={handleLoginSuccess}
-        />
-      )}
-      {!isAuthenticated && view === 'signup' && (
-        <SignUp onSwitch={() => setView('signin')} onBack={() => setView('home')} />
+      {/* AUTHENTICATION FLOW */}
+      {view === 'auth' && (
+        authSubView === 'signin' ? (
+          <SignIn 
+            onSwitch={() => setAuthSubView('signup')} 
+            onBack={() => setView('home')} 
+            onLoginSuccess={handleLoginSuccess}
+          />
+        ) : (
+          <SignUp 
+            onSwitch={() => setAuthSubView('signin')} 
+            onBack={() => setView('home')} 
+          />
+        )
       )}
 
-      {/* SECURED DASHBOARDS */}
-      {isAuthenticated && userRole === 'ADMIN' && <AdminDashboard onLogout={handleLogout} />}
-      {isAuthenticated && userRole === 'OWNER' && <OwnerDashboard onLogout={handleLogout} />}
+      {/* DASHBOARDS (Only if Authenticated) */}
+      {isAuthenticated && view === 'admin' && <AdminDashboard onLogout={handleLogout} />}
+      {isAuthenticated && view === 'owner' && <OwnerDashboard onLogout={handleLogout} />}
       
-      {/* PUBLIC/USER HOME */}
-      {(view === 'home' || (isAuthenticated && userRole === 'USER')) && (
-        <Home onAuthClick={() => setView('signin')} />
+      {/* USER HOME (Authenticated or Not) */}
+      {view === 'home' && (
+        <Home onAuthClick={() => { setView('auth'); setAuthSubView('signin'); }} />
       )}
     </div>
   );

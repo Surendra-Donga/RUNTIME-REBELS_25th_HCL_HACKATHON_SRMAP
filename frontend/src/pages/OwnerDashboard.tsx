@@ -24,7 +24,7 @@ const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ onLogout }) => {
     setIsLoading(true);
     try {
       if (activeTab === 'rooms') {
-        const response = await roomService.getAllRooms();
+        const response = await roomService.getMyRooms();
         setRooms(response.data || []);
       } else {
         const response = await hotelService.getMyHotels();
@@ -97,8 +97,6 @@ const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ onLogout }) => {
           >
             <Hotel size={20} /><span>My Properties</span>
           </button>
-          <button className="w-full flex items-center space-x-3 px-4 py-3 text-slate-400 hover:bg-white/5 rounded-xl font-bold transition-all"><BarChart3 size={20} /><span>Analytics</span></button>
-          <button className="w-full flex items-center space-x-3 px-4 py-3 text-slate-400 hover:bg-white/5 rounded-xl font-bold transition-all"><Settings size={20} /><span>Settings</span></button>
         </nav>
         <button onClick={onLogout} className="flex items-center space-x-3 px-4 py-3 text-slate-400 hover:text-red-400 transition-colors font-bold mt-auto border-t border-slate-800 pt-6"><LogOut size={20} /><span>Exit Dashboard</span></button>
       </aside>

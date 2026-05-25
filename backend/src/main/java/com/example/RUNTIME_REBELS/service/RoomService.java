@@ -3,6 +3,7 @@ package com.example.RUNTIME_REBELS.service;
 import com.example.RUNTIME_REBELS.model.Room;
 import com.example.RUNTIME_REBELS.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +23,15 @@ public class RoomService {
         return roomRepository.findByHotel_HotelId(hotelId);
     }
 
+    public List<Room> getRoomsByOwner(String username) {
+        // Fetch all rooms for all hotels owned by this user
+        return roomRepository.findAll().stream()
+                .filter(room -> room.getHotel() != null && 
+                                room.getHotel().getOwner() != null && 
+                                room.getHotel().getOwner().getUsername().equals(username))
+                .toList();
+    }
+
     public List<Room> getAvailableRooms() {
         return roomRepository.findByAvailabilityTrue();
     }
@@ -38,8 +48,8 @@ public class RoomService {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Room not found with id: " + id));
 
-        room.setRoomType(roomDetails.getRoomType());
-        room.setPricePerNight(roomDetails.getPricePerNight());
+        if (roomDetails.getRoomType() != null) room.setRoomType(roomDetails.getRoomType());
+        if (roomDetails.getPricePerNight() > 0) room.setPricePerNight(roomDetails.getPricePerNight());
         room.setAvailability(roomDetails.isAvailability());
         
         return roomRepository.save(room);
