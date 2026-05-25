@@ -13,18 +13,29 @@ export const authService = {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    const token = response.data;
-    if (token) {
-      localStorage.setItem('token', token);
+    
+    // The backend now returns { token, username, role } inside data
+    const loginData = response.data;
+    
+    if (loginData && loginData.token) {
+      localStorage.setItem('token', loginData.token);
+      localStorage.setItem('role', loginData.role);
+      localStorage.setItem('username', loginData.username);
     }
-    return token;
+    return loginData;
   },
 
   logout: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
   },
 
   isAuthenticated: () => {
     return !!localStorage.getItem('token');
+  },
+
+  getRole: () => {
+    return localStorage.getItem('role');
   }
 };

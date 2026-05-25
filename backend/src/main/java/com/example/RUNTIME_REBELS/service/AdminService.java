@@ -54,16 +54,8 @@ public class AdminService {
         hotelRepository.deleteById(id);
     }
 
-    public List<Users> getAllUsers() {
-        return userRepo.findAll().stream()
-                .filter(u -> u.getRole() == Role.USER)
-                .collect(Collectors.toList());
-    }
-
     public List<Users> getAllOwners() {
-        return userRepo.findAll().stream()
-                .filter(u -> u.getRole() == Role.OWNER)
-                .collect(Collectors.toList());
+        return userRepo.findByRole(Role.OWNER);
     }
 
     public void deleteUser(Long id) {

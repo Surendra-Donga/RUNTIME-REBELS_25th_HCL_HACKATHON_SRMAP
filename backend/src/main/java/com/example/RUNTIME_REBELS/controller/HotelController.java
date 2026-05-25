@@ -2,6 +2,7 @@ package com.example.RUNTIME_REBELS.controller;
 
 import com.example.RUNTIME_REBELS.model.Hotels;
 import com.example.RUNTIME_REBELS.service.HotelService;
+import com.example.RUNTIME_REBELS.util.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,47 +17,52 @@ public class HotelController {
     private HotelService hotelService;
 
     @GetMapping
-    public List<Hotels> getAllHotels() {
-        return hotelService.getAllHotels();
+    public ResponseEntity<ApiResponse<List<Hotels>>> getAllHotels() {
+        List<Hotels> hotels = hotelService.getAllHotels();
+        return ResponseEntity.ok(ApiResponse.success("Hotels retrieved successfully", hotels));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Hotels> getHotelById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Hotels>> getHotelById(@PathVariable Long id) {
         return hotelService.getHotelById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(hotel -> ResponseEntity.ok(ApiResponse.success("Hotel retrieved successfully", hotel)))
+                .orElse(ResponseEntity.status(404).body(ApiResponse.error(404, "Hotel not found")));
     }
 
     @GetMapping("/search")
-    public List<Hotels> searchHotels(@RequestParam String location) {
-        return hotelService.searchHotelsByLocation(location);
+    public ResponseEntity<ApiResponse<List<Hotels>>> searchHotels(@RequestParam String location) {
+        List<Hotels> hotels = hotelService.searchHotelsByLocation(location);
+        return ResponseEntity.ok(ApiResponse.success("Hotels retrieved successfully", hotels));
     }
 
     @GetMapping("/advanced-search")
-    public List<Hotels> advancedSearch(@RequestParam(required = false) String location,
+    public ResponseEntity<ApiResponse<List<Hotels>>> advancedSearch(@RequestParam(required = false) String location,
                                        @RequestParam(required = false) Double minPrice,
                                        @RequestParam(required = false) Double maxPrice,
                                        @RequestParam(required = false) String amenity) {
-        return hotelService.searchAdvanced(location, minPrice, maxPrice, amenity);
+        List<Hotels> hotels = hotelService.searchAdvanced(location, minPrice, maxPrice, amenity);
+        return ResponseEntity.ok(ApiResponse.success("Hotels retrieved successfully", hotels));
     }
 
     @PostMapping
-    public Hotels addHotel(@RequestBody Hotels hotel) {
-        return hotelService.addHotel(hotel);
+    public ResponseEntity<ApiResponse<Hotels>> addHotel(@RequestBody Hotels hotel) {
+        Hotels savedHotel = hotelService.addHotel(hotel);
+        return ResponseEntity.ok(ApiResponse.success("Hotel added successfully", savedHotel));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Hotels> updateHotel(@PathVariable Long id, @RequestBody Hotels hotelDetails) {
+    public ResponseEntity<ApiResponse<Hotels>> updateHotel(@PathVariable Long id, @RequestBody Hotels hotelDetails) {
         try {
-            return ResponseEntity.ok(hotelService.updateHotel(id, hotelDetails));
+            Hotels updatedHotel = hotelService.updateHotel(id, hotelDetails);
+            return ResponseEntity.ok(ApiResponse.success("Hotel updated successfully", updatedHotel));
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(ApiResponse.error(404, "Hotel not found"));
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteHotel(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteHotel(@PathVariable Long id) {
         hotelService.deleteHotel(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Hotel deleted successfully", null));
     }
 }

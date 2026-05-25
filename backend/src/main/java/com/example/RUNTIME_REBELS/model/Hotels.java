@@ -1,10 +1,12 @@
 package com.example.RUNTIME_REBELS.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -40,7 +42,8 @@ public class Hotels {
     private boolean approved = false;
 
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<Room> rooms;
+    @JsonIgnore // Prevent infinite recursion during JSON serialization
+    private List<Room> rooms;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

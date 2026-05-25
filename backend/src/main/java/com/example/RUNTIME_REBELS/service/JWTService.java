@@ -8,10 +8,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,16 +17,10 @@ import java.util.function.Function;
 @Service
 public class JWTService {
 
-    private String secretKey = "";
+    // A 64-byte (512-bit) secret key encoded in Base64
+    private final String secretKey = "c29tZS12ZXJ5LXNlY3VyZS1hbmQtbG9uZy1zZWNyZXQta2V5LXdoaWNoLWlzLWF0LWxlYXN0LTY0LWNoYXJhY3RlcnMtbG9uZy1mb3ItSFM1MTI=";
 
     public JWTService() {
-        try {
-            KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
-            SecretKey sk = keyGen.generateKey();
-            secretKey = Base64.getEncoder().encodeToString(sk.getEncoded());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public String generateToken(String username) {
@@ -39,7 +30,7 @@ public class JWTService {
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 60 * 60 * 30 * 1000))
-                .signWith(getKey(), SignatureAlgorithm.HS256).compact();
+                .signWith(getKey(), SignatureAlgorithm.HS512).compact();
     }
 
     private SecretKey getKey() {

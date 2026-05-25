@@ -1,5 +1,6 @@
 import React from 'react';
-import { Compass, Calendar, Info, User } from 'lucide-react';
+import { Compass, Calendar, Info, User, LogOut } from 'lucide-react';
+import { authService } from '../services/authService';
 
 interface SideNavbarProps {
   activeView?: string;
@@ -8,6 +9,13 @@ interface SideNavbarProps {
 }
 
 const SideNavbar: React.FC<SideNavbarProps> = ({ activeView, setView, onProfileClick }) => {
+  const isLoggedIn = authService.isAuthenticated();
+
+  const handleLogout = () => {
+    authService.logout();
+    window.location.reload();
+  };
+
   return (
     <nav className="fixed left-0 top-0 bottom-0 w-20 md:w-24 bg-slate-900/95 backdrop-blur-xl border-r border-slate-800 flex flex-col items-center py-10 z-50 shadow-2xl">
       <div className="mb-12 cursor-pointer group" onClick={() => setView('home')}>
@@ -30,8 +38,17 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ activeView, setView, onProfileC
           </button>
         ))}
       </div>
+      
+      {isLoggedIn && (
+        <button onClick={handleLogout} className="p-3 mb-4 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-2xl transition-all group relative">
+          <LogOut size={24} />
+          <span className="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 uppercase tracking-widest font-bold">Logout</span>
+        </button>
+      )}
+
       <button onClick={onProfileClick} className="p-3 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-2xl transition-all group relative">
         <User size={24} />
+        <span className="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 uppercase tracking-widest font-bold">Account</span>
       </button>
     </nav>
   );

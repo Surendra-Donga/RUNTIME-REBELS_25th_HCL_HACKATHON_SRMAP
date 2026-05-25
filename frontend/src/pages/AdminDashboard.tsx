@@ -15,20 +15,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [pendingHotels, setPendingHotels] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [owners, setOwners] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
       if (activeTab === 'hotels') {
-        const data = await apiFetch('/admin/pending-hotels');
-        setPendingHotels(data);
+        const response = await apiFetch('/admin/pending-hotels');
+        setPendingHotels(response.data || []);
       } else if (activeTab === 'users') {
-        const data = await apiFetch('/admin/users');
-        setUsers(data);
+        const response = await apiFetch('/admin/users');
+        setUsers(response.data || []);
       } else if (activeTab === 'owners') {
-        const data = await apiFetch('/admin/owners');
-        setOwners(data);
+        const response = await apiFetch('/admin/owners');
+        setOwners(response.data || []);
       }
     } catch (error) {
       console.error(`Failed to fetch ${activeTab}:`, error);
@@ -114,7 +114,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           <p className="text-center py-20 font-bold text-slate-400">Loading data...</p>
         ) : (
           <div className="grid grid-cols-1 gap-6">
-            {activeTab === 'hotels' && pendingHotels.map((hotel) => (
+            {activeTab === 'hotels' && Array.isArray(pendingHotels) && pendingHotels.map((hotel) => (
               <motion.div key={hotel.hotelId} layout className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between group hover:shadow-md transition-all">
                 <div className="flex items-center space-x-8">
                   <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center text-emerald-600"><Hotel size={32} /></div>
@@ -131,7 +131,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               </motion.div>
             ))}
 
-            {(activeTab === 'users' || activeTab === 'owners') && (activeTab === 'users' ? users : owners).map((user) => (
+            {(activeTab === 'users' || activeTab === 'owners') && 
+             Array.isArray(activeTab === 'users' ? users : owners) && 
+             (activeTab === 'users' ? users : owners).map((user) => (
               <motion.div key={user.userId} layout className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between group hover:shadow-md transition-all">
                 <div className="flex items-center space-x-8">
                   <div className={`w-20 h-20 rounded-3xl flex items-center justify-center ${activeTab === 'users' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'}`}><Users size={32} /></div>

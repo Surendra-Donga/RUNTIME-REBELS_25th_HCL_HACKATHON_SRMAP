@@ -2,8 +2,10 @@ package com.example.RUNTIME_REBELS.service;
 
 import com.example.RUNTIME_REBELS.model.Booking;
 import com.example.RUNTIME_REBELS.model.BookingStatus;
+import com.example.RUNTIME_REBELS.model.Room;
 import com.example.RUNTIME_REBELS.model.Users;
 import com.example.RUNTIME_REBELS.repository.BookingRepo;
+import com.example.RUNTIME_REBELS.repository.RoomRepository;
 import com.example.RUNTIME_REBELS.repository.UserRepo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,31 +28,35 @@ public class BookingService {
     private UserRepo userRepo;
 
     @Autowired
-    private EmailService emailService;
+    private RoomRepository roomRepository;
 
     public Booking createBooking(Booking booking) {
         log.info("Initiating booking for room: {}", booking.getRoom().getRoomId());
+        
+        Room room = roomRepository.findById(booking.getRoom().getRoomId())
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+        
+        if (!room.isAvailability()) {
+            throw new RuntimeException("Room is already booked");
+        }
+
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Users user = userRepo.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
         
         booking.setUser(user);
+        booking.setRoom(room);
         booking.setCreatedAt(LocalDateTime.now());
         booking.setStatus(BookingStatus.CONFIRMED);
 
         long days = ChronoUnit.DAYS.between(booking.getCheckIn(), booking.getCheckOut());
         if (days <= 0) days = 1;
-        booking.setTotalPrice(booking.getRoom().getPricePerNight() * days);
+        booking.setTotalPrice(room.getPricePerNight() * days);
+
+        // Update room availability
+        room.setAvailability(false);
+        roomRepository.save(room);
 
         Booking savedBooking = bookingRepo.save(booking);
-
-        // Send confirmation email
-        try {
-            emailService.sendEmail(user.getEmail(), "Booking Confirmed", 
-                "Your booking for " + booking.getRoom().getRoomType() + " at " + 
-                booking.getRoom().getHotel().getHotelName() + " is confirmed.");
-        } catch (Exception e) {
-            log.error("Failed to send email: {}", e.getMessage());
-        }
 
         return savedBooking;
     }
@@ -69,6 +75,14 @@ public class BookingService {
     public Booking updateStatus(Long bookingId, BookingStatus status) {
         Booking booking = bookingRepo.findById(bookingId).orElseThrow(() -> new RuntimeException("Booking not found"));
         booking.setStatus(status);
+        
+        // If booking is cancelled, make room available again
+        if (status == BookingStatus.CANCELLED) {
+            Room room = booking.getRoom();
+            room.setAvailability(true);
+            roomRepository.save(room);
+        }
+        
         return bookingRepo.save(booking);
     }
 
@@ -85,6 +99,11 @@ public class BookingService {
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
         booking.setStatus(BookingStatus.CANCELLED);
+        
+        Room room = booking.getRoom();
+        room.setAvailability(true);
+        roomRepository.save(room);
+        
         bookingRepo.save(booking);
     }
 }

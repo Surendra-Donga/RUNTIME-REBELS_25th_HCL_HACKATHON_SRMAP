@@ -1,5 +1,6 @@
 package com.example.RUNTIME_REBELS.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class Users {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @JsonIgnore // Never return password in API responses
     @Column(nullable = false)
     private String password;
 
@@ -28,7 +30,7 @@ public class Users {
     @Column(nullable = false)
     private int age;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(50)")
     @Enumerated(EnumType.STRING)
     private Role role;
 

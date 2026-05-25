@@ -2,6 +2,7 @@ package com.example.RUNTIME_REBELS.controller;
 
 import com.example.RUNTIME_REBELS.model.Room;
 import com.example.RUNTIME_REBELS.service.RoomService;
+import com.example.RUNTIME_REBELS.util.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,44 +17,49 @@ public class RoomController {
     private RoomService roomService;
 
     @GetMapping
-    public List<Room> getAllRooms() {
-        return roomService.getAllRooms();
+    public ResponseEntity<ApiResponse<List<Room>>> getAllRooms() {
+        List<Room> rooms = roomService.getAllRooms();
+        return ResponseEntity.ok(ApiResponse.success("Rooms retrieved successfully", rooms));
     }
 
     @GetMapping("/hotel/{hotelId}")
-    public List<Room> getRoomsByHotel(@PathVariable Long hotelId) {
-        return roomService.getRoomsByHotel(hotelId);
+    public ResponseEntity<ApiResponse<List<Room>>> getRoomsByHotel(@PathVariable Long hotelId) {
+        List<Room> rooms = roomService.getRoomsByHotel(hotelId);
+        return ResponseEntity.ok(ApiResponse.success("Rooms retrieved successfully", rooms));
     }
 
     @GetMapping("/available")
-    public List<Room> getAvailableRooms() {
-        return roomService.getAvailableRooms();
+    public ResponseEntity<ApiResponse<List<Room>>> getAvailableRooms() {
+        List<Room> rooms = roomService.getAvailableRooms();
+        return ResponseEntity.ok(ApiResponse.success("Available rooms retrieved successfully", rooms));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Room> getRoomById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Room>> getRoomById(@PathVariable Long id) {
         return roomService.getRoomById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(room -> ResponseEntity.ok(ApiResponse.success("Room retrieved successfully", room)))
+                .orElse(ResponseEntity.status(404).body(ApiResponse.error(404, "Room not found")));
     }
 
     @PostMapping
-    public Room addRoom(@RequestBody Room room) {
-        return roomService.addRoom(room);
+    public ResponseEntity<ApiResponse<Room>> addRoom(@RequestBody Room room) {
+        Room savedRoom = roomService.addRoom(room);
+        return ResponseEntity.ok(ApiResponse.success("Room added successfully", savedRoom));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Room> updateRoom(@PathVariable Long id, @RequestBody Room roomDetails) {
+    public ResponseEntity<ApiResponse<Room>> updateRoom(@PathVariable Long id, @RequestBody Room roomDetails) {
         try {
-            return ResponseEntity.ok(roomService.updateRoom(id, roomDetails));
+            Room updatedRoom = roomService.updateRoom(id, roomDetails);
+            return ResponseEntity.ok(ApiResponse.success("Room updated successfully", updatedRoom));
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(ApiResponse.error(404, "Room not found"));
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRoom(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteRoom(@PathVariable Long id) {
         roomService.deleteRoom(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Room deleted successfully", null));
     }
 }

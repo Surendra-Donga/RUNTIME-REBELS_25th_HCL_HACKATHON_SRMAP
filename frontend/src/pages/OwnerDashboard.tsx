@@ -24,11 +24,11 @@ const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ onLogout }) => {
     setIsLoading(true);
     try {
       if (activeTab === 'rooms') {
-        const data = await roomService.getAllRooms();
-        setRooms(data);
+        const response = await roomService.getAllRooms();
+        setRooms(response.data || []);
       } else {
-        const data = await hotelService.getMyHotels();
-        setMyHotels(data);
+        const response = await hotelService.getMyHotels();
+        setMyHotels(response.data || []);
       }
     } catch (error) {
       console.error(`Failed to fetch ${activeTab}:`, error);
