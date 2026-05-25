@@ -20,6 +20,25 @@ public class AdminService {
     @Autowired
     private UserRepo userRepo;
 
+    public List<Users> getAllUsers(Role role) {
+        if (role != null) {
+            return userRepo.findByRole(role);
+        }
+        return userRepo.findAll();
+    }
+
+    public Users updateUserRole(Long userId, Role role) {
+        Users user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setRole(role);
+        return userRepo.save(user);
+    }
+
+    public Users toggleUserStatus(Long userId) {
+        Users user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setEnabled(!user.isEnabled());
+        return userRepo.save(user);
+    }
+
     public List<Hotels> getPendingHotels() {
         return hotelRepository.findByApprovedFalse();
     }

@@ -33,6 +33,9 @@ public class Users {
     private Role role;
 
     @Column(nullable = false)
+    private boolean enabled = true;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
 }

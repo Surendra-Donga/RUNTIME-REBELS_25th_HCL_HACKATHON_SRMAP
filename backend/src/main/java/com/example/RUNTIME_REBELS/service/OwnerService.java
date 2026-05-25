@@ -1,7 +1,10 @@
 package com.example.RUNTIME_REBELS.service;
 
+import com.example.RUNTIME_REBELS.model.Booking;
+import com.example.RUNTIME_REBELS.model.BookingStatus;
 import com.example.RUNTIME_REBELS.model.Hotels;
 import com.example.RUNTIME_REBELS.model.Users;
+import com.example.RUNTIME_REBELS.repository.BookingRepo;
 import com.example.RUNTIME_REBELS.repository.HotelRepository;
 import com.example.RUNTIME_REBELS.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,14 @@ public class OwnerService {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private BookingRepo bookingRepo;
+
+    public double getEarningsAnalytics(String username) {
+        List<Booking> confirmedBookings = bookingRepo.findByRoom_Hotel_Owner_UsernameAndStatus(username, BookingStatus.CONFIRMED);
+        return confirmedBookings.stream().mapToDouble(Booking::getTotalPrice).sum();
+    }
 
     public List<Hotels> getHotelsByOwner(String username) {
         return hotelRepository.findByOwner_Username(username);

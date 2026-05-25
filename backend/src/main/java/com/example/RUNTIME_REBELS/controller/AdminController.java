@@ -1,6 +1,7 @@
 package com.example.RUNTIME_REBELS.controller;
 
 import com.example.RUNTIME_REBELS.model.Hotels;
+import com.example.RUNTIME_REBELS.model.Role;
 import com.example.RUNTIME_REBELS.model.Users;
 import com.example.RUNTIME_REBELS.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,21 @@ public class AdminController {
 
     @Autowired
     private AdminService adminService;
+
+    @GetMapping("/users")
+    public List<Users> getAllUsers(@RequestParam(required = false) Role role) {
+        return adminService.getAllUsers(role);
+    }
+
+    @PutMapping("/users/{userId}/role")
+    public ResponseEntity<Users> updateUserRole(@PathVariable Long userId, @RequestParam Role role) {
+        return ResponseEntity.ok(adminService.updateUserRole(userId, role));
+    }
+
+    @PutMapping("/users/{userId}/toggle-status")
+    public ResponseEntity<Users> toggleUserStatus(@PathVariable Long userId) {
+        return ResponseEntity.ok(adminService.toggleUserStatus(userId));
+    }
 
     @GetMapping("/pending-hotels")
     public List<Hotels> getPendingHotels() {

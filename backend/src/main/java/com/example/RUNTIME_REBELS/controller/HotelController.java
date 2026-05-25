@@ -32,6 +32,14 @@ public class HotelController {
         return hotelService.searchHotelsByLocation(location);
     }
 
+    @GetMapping("/advanced-search")
+    public List<Hotels> advancedSearch(@RequestParam(required = false) String location,
+                                       @RequestParam(required = false) Double minPrice,
+                                       @RequestParam(required = false) Double maxPrice,
+                                       @RequestParam(required = false) String amenity) {
+        return hotelService.searchAdvanced(location, minPrice, maxPrice, amenity);
+    }
+
     @PostMapping
     public Hotels addHotel(@RequestBody Hotels hotel) {
         return hotelService.addHotel(hotel);

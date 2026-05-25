@@ -27,6 +27,10 @@ public class HotelService {
         return hotelRepository.findByLocationContainingIgnoreCase(location);
     }
 
+    public List<Hotels> searchAdvanced(String location, Double minPrice, Double maxPrice, String amenity) {
+        return hotelRepository.findAdvanced(location, minPrice, maxPrice, amenity);
+    }
+
     public Hotels addHotel(Hotels hotel) {
         hotel.setCreatedAt(LocalDateTime.now());
         return hotelRepository.save(hotel);
