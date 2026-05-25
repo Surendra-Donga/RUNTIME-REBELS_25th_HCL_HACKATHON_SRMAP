@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+db.txt
+WhatsApp Image*.jpeg
