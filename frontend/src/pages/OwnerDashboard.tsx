@@ -1,28 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Plus, Settings, Wrench, CheckCircle2, XCircle, 
   IndianRupee, Bed, Users, Star, Edit3, 
   BarChart3, LayoutDashboard, LogOut
 } from 'lucide-react';
+import { roomService } from '../services/roomService';
 
 interface OwnerDashboardProps {
   onLogout: () => void;
 }
 
 const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ onLogout }) => {
-  const [rooms, setRooms] = useState([
-    { id: 1, type: 'Nature Suite', price: 15000, status: 'Available', occupancy: 2, rating: 4.9 },
-    { id: 2, type: 'Coastal Suite', price: 28000, status: 'Booked', occupancy: 2, rating: 4.8 },
-    { id: 3, type: 'Elite Suite', price: 65000, status: 'Under Renovation', occupancy: 4, rating: 5.0 },
-  ]);
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const toggleStatus = (id: number, newStatus: string) => {
-    setRooms(rooms.map(room => room.id === id ? { ...room, status: newStatus } : room));
+  const fetchRooms = async () => {
+    try {
+      const data = await roomService.getAllRooms();
+      setRooms(data);
+    } catch (error) {
+      console.error('Failed to fetch rooms:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updatePrice = (id: number, newPrice: number) => {
-    setRooms(rooms.map(room => room.id === id ? { ...room, price: newPrice } : room));
+  useEffect(() => {
+    fetchRooms();
+  }, []);
+
+  const toggleStatus = async (id: number, currentAvailability: boolean) => {
+    try {
+      await roomService.updateRoom(id, { availability: !currentAvailability });
+      fetchRooms();
+    } catch (error) {
+      console.error('Failed to update status:', error);
+    }
+  };
+
+  const updatePrice = async (id: number, newPrice: number) => {
+    try {
+      await roomService.updateRoom(id, { pricePerNight: newPrice });
+      fetchRooms();
+    } catch (error) {
+      console.error('Failed to update price:', error);
+    }
+  };
+
+  const addNewRoom = async () => {
+    const roomType = prompt('Enter Room Type (e.g., Nature, Coastal, Elite):');
+    const price = prompt('Enter Price per Night:');
+    if (roomType && price) {
+      try {
+        await roomService.addRoom({ 
+          roomType, 
+          pricePerNight: parseInt(price), 
+          availability: true,
+          hotel: { hotelId: 1 } // Mock hotel ID
+        });
+        fetchRooms();
+      } catch (error) {
+        console.error('Failed to add room:', error);
+      }
+    }
   };
 
   return (
@@ -46,34 +87,49 @@ const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ onLogout }) => {
             <h1 className="text-5xl font-black text-slate-900 tracking-tight mb-2">Room Management</h1>
             <p className="text-slate-500 font-bold">Control availability and pricing in real-time</p>
           </div>
-          <button className="bg-slate-900 text-white px-6 py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all flex items-center space-x-2"><Plus size={20} /><span>ADD NEW ROOM</span></button>
+          <button onClick={addNewRoom} className="bg-slate-900 text-white px-6 py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all flex items-center space-x-2"><Plus size={20} /><span>ADD NEW ROOM</span></button>
         </header>
 
-        <div className="grid grid-cols-1 gap-6">
-          {rooms.map((room) => (
-            <motion.div key={room.id} layout className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between group hover:shadow-md transition-all">
-              <div className="flex items-center space-x-8">
-                <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-400 group-hover:bg-red-50 group-hover:text-red-500 transition-colors"><Bed size={32} /></div>
-                <div><h3 className="text-2xl font-black text-slate-900 tracking-tight">{room.type}</h3><div className="flex items-center space-x-4 mt-1"><span className="flex items-center text-slate-400 text-sm font-bold"><Users size={14} className="mr-1" /> {room.occupancy} Guests</span><span className="flex items-center text-amber-500 text-sm font-black"><Star size={14} className="mr-1 fill-amber-500" /> {room.rating}</span></div></div>
-              </div>
-              <div className="flex items-center space-x-3">
-                {[
-                  { label: 'Available', icon: CheckCircle2, color: 'text-emerald-500 bg-emerald-50' },
-                  { label: 'Booked', icon: XCircle, color: 'text-indigo-500 bg-indigo-50' },
-                  { label: 'Under Renovation', icon: Wrench, color: 'text-amber-500 bg-amber-50' }
-                ].map((s) => (
-                  <button key={s.label} onClick={() => toggleStatus(room.id, s.label)} className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-black transition-all border ${room.status === s.label ? s.color + ' border-transparent shadow-sm scale-105' : 'bg-transparent text-slate-400 border-slate-100 hover:border-slate-300'}`}>
-                    <s.icon size={14} /><span>{s.label.toUpperCase()}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center space-x-6 pl-8 border-l border-slate-100">
-                <div className="text-right"><p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Base Rate</p><div className="flex items-center justify-end text-2xl font-black text-slate-900"><IndianRupee size={20} className="mr-0.5" /><span>{room.price.toLocaleString('en-IN')}</span></div></div>
-                <button onClick={() => { const price = prompt('Enter new price in INR:', room.price.toString()); if (price) updatePrice(room.id, parseInt(price)); }} className="p-3 bg-slate-50 text-slate-400 hover:bg-red-600 hover:text-white rounded-xl transition-all"><Edit3 size={18} /></button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {isLoading ? (
+          <p className="text-center py-20 font-bold text-slate-400">Loading rooms...</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            {rooms.map((room) => (
+              <motion.div key={room.roomId} layout className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between group hover:shadow-md transition-all">
+                <div className="flex items-center space-x-8">
+                  <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-400 group-hover:bg-red-50 group-hover:text-red-500 transition-colors"><Bed size={32} /></div>
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{room.roomType} Suite</h3>
+                    <div className="flex items-center space-x-4 mt-1">
+                      <span className="flex items-center text-slate-400 text-sm font-bold"><Users size={14} className="mr-1" /> 2 Guests</span>
+                      <span className="flex items-center text-amber-500 text-sm font-black"><Star size={14} className="mr-1 fill-amber-500" /> {room.hotel?.rating || 4.5}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  {[
+                    { label: 'Available', value: true, icon: CheckCircle2, color: 'text-emerald-500 bg-emerald-50' },
+                    { label: 'Booked', value: false, icon: XCircle, color: 'text-indigo-500 bg-indigo-50' }
+                  ].map((s) => (
+                    <button key={s.label} onClick={() => toggleStatus(room.roomId, room.availability)} className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-black transition-all border ${room.availability === s.value ? s.color + ' border-transparent shadow-sm scale-105' : 'bg-transparent text-slate-400 border-slate-100 hover:border-slate-300'}`}>
+                      <s.icon size={14} /><span>{s.label.toUpperCase()}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center space-x-6 pl-8 border-l border-slate-100">
+                  <div className="text-right">
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Base Rate</p>
+                    <div className="flex items-center justify-end text-2xl font-black text-slate-900">
+                      <IndianRupee size={20} className="mr-0.5" />
+                      <span>{room.pricePerNight.toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => { const price = prompt('Enter new price in INR:', room.pricePerNight.toString()); if (price) updatePrice(room.roomId, parseInt(price)); }} className="p-3 bg-slate-50 text-slate-400 hover:bg-red-600 hover:text-white rounded-xl transition-all"><Edit3 size={18} /></button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
