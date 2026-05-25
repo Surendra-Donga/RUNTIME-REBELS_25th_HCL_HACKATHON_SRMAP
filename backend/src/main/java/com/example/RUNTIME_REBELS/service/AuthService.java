@@ -3,7 +3,9 @@ package com.example.RUNTIME_REBELS.service;
 import com.example.RUNTIME_REBELS.model.Role;
 import com.example.RUNTIME_REBELS.model.Users;
 import com.example.RUNTIME_REBELS.repository.UserRepo;
-import com.example.RUNTIME_REBELS.service.JWTService;
+import com.example.RUNTIME_REBELS.dto.UserRegistrationDTO;
+import com.example.RUNTIME_REBELS.dto.UserResponseDTO;
+import com.example.RUNTIME_REBELS.dto.LoginResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -12,7 +14,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 public class AuthService {
@@ -29,26 +30,51 @@ public class AuthService {
     @Autowired
     private JWTService jwtService;
 
-    public Users register(Users user) {
-        if (user.getAge() < 18) {
-            throw new RuntimeException("User must be at least 18 years old to register.");
+    public UserResponseDTO register(UserRegistrationDTO registrationDTO) {
+        Users user = new Users();
+        user.setUsername(registrationDTO.getUsername());
+        user.setPassword(encoder.encode(registrationDTO.getPassword()));
+
+        user.setEmail(registrationDTO.getEmail() != null ? registrationDTO.getEmail() : registrationDTO.getUsername() + "@example.com");
+        user.setAge(registrationDTO.getAge() > 0 ? registrationDTO.getAge() : 18);
+        
+        Role userRole = Role.USER;
+        if (registrationDTO.getRole() != null) {
+            String roleStr = registrationDTO.getRole().trim().toUpperCase();
+            try {
+                userRole = Role.valueOf(roleStr);
+            } catch (IllegalArgumentException e) {
+                userRole = Role.USER;
+            }
         }
-        user.setPassword(encoder.encode(user.getPassword()));
-        if (user.getRole() == null) {
-            user.setRole(Role.USER);
-        }
+        user.setRole(userRole);
+
         user.setCreatedAt(LocalDateTime.now());
-        return userRepo.save(user);
+        user.setEnabled(true);
+
+        System.out.println("DEBUG: Registering user: " + user.getUsername() + " with role: " + user.getRole());
+        Users savedUser = userRepo.save(user);
+
+        return new UserResponseDTO(
+            savedUser.getUserId(),
+            savedUser.getUsername(),
+            savedUser.getEmail(),
+            savedUser.getAge(),
+            savedUser.getRole(),
+            savedUser.getCreatedAt()
+        );
     }
 
-    public String verify(Users user) {
+    public LoginResponseDTO login(String username, String password) {
         Authentication authentication = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
+                new UsernamePasswordAuthenticationToken(username, password)
         );
 
         if (authentication.isAuthenticated()) {
-            return jwtService.generateToken(user.getUsername());
+            Users user = userRepo.findByUsername(username).orElseThrow();
+            String token = jwtService.generateToken(username);
+            return new LoginResponseDTO(token, user.getUsername(), user.getRole());
         }
-        return "Login Fail";
+        return null;
     }
 }

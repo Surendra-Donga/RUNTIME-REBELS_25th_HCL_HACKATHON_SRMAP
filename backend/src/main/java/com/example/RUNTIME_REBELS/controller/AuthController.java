@@ -1,6 +1,9 @@
 package com.example.RUNTIME_REBELS.controller;
 
-import com.example.RUNTIME_REBELS.model.Users;
+import com.example.RUNTIME_REBELS.dto.LoginRequestDTO;
+import com.example.RUNTIME_REBELS.dto.LoginResponseDTO;
+import com.example.RUNTIME_REBELS.dto.UserRegistrationDTO;
+import com.example.RUNTIME_REBELS.dto.UserResponseDTO;
 import com.example.RUNTIME_REBELS.service.AuthService;
 import com.example.RUNTIME_REBELS.util.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,17 +21,17 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Users>> register(@RequestBody Users user) {
-        Users registeredUser = authService.register(user);
+    public ResponseEntity<ApiResponse<UserResponseDTO>> register(@RequestBody UserRegistrationDTO registrationDTO) {
+        UserResponseDTO registeredUser = authService.register(registrationDTO);
         return ResponseEntity.ok(ApiResponse.success("User registered successfully", registeredUser));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<String>> login(@RequestBody Users user) {
-        String token = authService.verify(user);
-        if (token.equals("Login Fail")) {
+    public ResponseEntity<ApiResponse<LoginResponseDTO>> login(@RequestBody LoginRequestDTO loginRequest) {
+        LoginResponseDTO loginResponse = authService.login(loginRequest.getUsername(), loginRequest.getPassword());
+        if (loginResponse == null) {
             return ResponseEntity.status(401).body(ApiResponse.error(401, "Invalid username or password"));
         }
-        return ResponseEntity.ok(ApiResponse.success("Login successful", token));
+        return ResponseEntity.ok(ApiResponse.success("Login successful", loginResponse));
     }
 }

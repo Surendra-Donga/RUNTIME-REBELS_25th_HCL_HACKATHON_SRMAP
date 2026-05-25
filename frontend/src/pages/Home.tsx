@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, MapPin, ChevronDown, Trees, Waves, Sparkles } from 'lucide-react';
+import { Search, MapPin, ChevronDown, Trees, Waves, Sparkles, Hotel as HotelIcon, ArrowLeft, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeroBackground from '../components/HeroBackground';
 import SideNavbar from '../components/SideNavbar';
@@ -8,36 +8,67 @@ import BookingModal from '../components/BookingModal';
 import ExtensionModal from '../components/ExtensionModal';
 
 import { roomService } from '../services/roomService';
+import { hotelService } from '../services/hotelService';
 import { bookingService } from '../services/bookingService';
+import { authService } from '../services/authService';
 
 const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
   const [activeView, setActiveView] = useState('home');
+  const [isLoggedIn, setIsLoggedIn] = useState(authService.isAuthenticated());
   const [isLocationOpen, setIsLocationOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState('Bali, Indonesia');
+  const [selectedLocation, setSelectedLocation] = useState('india');
   const [searchQuery, setSearchQuery] = useState('');
   const [vibeFilter, setVibeFilter] = useState('All');
   const [bookingRoom, setBookingRoom] = useState<any>(null);
+  
+  const [hotels, setHotels] = useState<any[]>([]);
+  const [selectedHotel, setSelectedHotel] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
+  
   const [userBookings, setUserBookings] = useState<any[]>([]);
   const [extendingBooking, setExtendingBooking] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const locations = ['Bali, Indonesia', 'Swiss Alps, Switzerland', 'Santorini, Greece', 'Kyoto, Japan', 'Banff, Canada'];
+  const handleLogout = () => {
+    authService.logout();
+    setIsLoggedIn(false);
+    window.location.reload();
+  };
+
+  const locations = ['india', 'Bali, Indonesia', 'Swiss Alps, Switzerland', 'Santorini, Greece', 'Kyoto, Japan', 'Banff, Canada'];
   
-  const fetchRooms = async () => {
+  const fetchHotels = async () => {
     try {
-      const data = await roomService.getAllRooms();
-      const mappedRooms = data.map((room: any) => ({
+      const response = await hotelService.getAllHotels();
+      const hotelsData = response.data || [];
+      setHotels(hotelsData);
+      
+      if (hotelsData.length > 0 && !hotelsData.some((h: any) => h.location.toLowerCase().includes(selectedLocation.toLowerCase()))) {
+        // Fallback to first hotel location if india is empty
+        const firstLoc = hotelsData[0].location;
+        if (!locations.includes(firstLoc)) locations.push(firstLoc);
+        setSelectedLocation(firstLoc);
+      }
+    } catch (error) {
+      console.error('Failed to fetch hotels:', error);
+    }
+  };
+
+  const fetchRoomsByHotel = async (hotelId: number) => {
+    try {
+      const response = await roomService.getRoomsByHotel(hotelId);
+      const roomsData = response.data || [];
+      const mappedRooms = roomsData.map((room: any) => ({
         id: room.roomId,
         type: room.roomType,
         price: room.pricePerNight,
         rating: room.hotel?.rating || 4.5,
         occupancy: 2, 
         amenities: room.hotel?.amenities ? room.hotel.amenities.split(',') : ['Free WiFi', 'AC'],
-        color: room.roomType === 'Elite' ? 'amber' : room.roomType === 'Coastal' ? 'indigo' : 'emerald',
-        icon: room.roomType === 'Elite' ? Sparkles : room.roomType === 'Coastal' ? Waves : Trees,
+        color: room.roomType.toLowerCase().includes('elite') ? 'amber' : room.roomType.toLowerCase().includes('coastal') ? 'indigo' : 'emerald',
+        icon: room.roomType.toLowerCase().includes('elite') ? Sparkles : room.roomType.toLowerCase().includes('coastal') ? Waves : Trees,
         location: room.hotel?.location || 'Unknown',
-        vibe: room.roomType === 'Elite' ? 'Luxury' : room.roomType === 'Coastal' ? 'Coastal' : 'Nature'
+        vibe: room.roomType.toLowerCase().includes('elite') ? 'Luxury' : room.roomType.toLowerCase().includes('coastal') ? 'Coastal' : 'Nature'
       }));
       setRooms(mappedRooms);
     } catch (error) {
@@ -47,17 +78,17 @@ const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
 
   const fetchUserBookings = async () => {
     try {
-      const data = await bookingService.getMyBookings();
-      // The backend returns an ApiResponse wrapper for some endpoints
-      const bookings = data.data || data;
-      setUserBookings(bookings);
+      const response = await bookingService.getMyBookings();
+      const bookings = response.data || [];
+      setUserBookings(Array.isArray(bookings) ? bookings : []);
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
+      setUserBookings([]);
     }
   };
 
   useEffect(() => {
-    fetchRooms();
+    fetchHotels();
   }, []);
 
   useEffect(() => {
@@ -66,15 +97,19 @@ const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
     }
   }, [activeView]);
 
-  const filteredRooms = useMemo(() => {
-    return rooms.filter(room => {
-      const matchesVibe = vibeFilter === 'All' || room.vibe === vibeFilter;
-      const matchesSearch = room.type.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           room.location.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesLocation = room.location === selectedLocation;
-      return matchesVibe && (searchQuery ? matchesSearch : matchesLocation);
+  const filteredHotels = useMemo(() => {
+    return hotels.filter(hotel => {
+      const matchesSearch = hotel.hotelName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           hotel.location.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLocation = hotel.location.toLowerCase().includes(selectedLocation.toLowerCase());
+      return searchQuery ? matchesSearch : matchesLocation;
     });
-  }, [vibeFilter, searchQuery, selectedLocation, rooms]);
+  }, [searchQuery, selectedLocation, hotels]);
+
+  const handleHotelClick = (hotel: any) => {
+    setSelectedHotel(hotel);
+    fetchRoomsByHotel(hotel.hotelId);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -87,7 +122,7 @@ const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
   return (
     <div className="relative min-h-screen flex bg-transparent overflow-x-hidden">
       <HeroBackground />
-      <SideNavbar activeView={activeView} setView={setActiveView} onProfileClick={onAuthClick} />
+      <SideNavbar activeView={activeView} setView={(v) => { setActiveView(v); setSelectedHotel(null); }} onProfileClick={onAuthClick} />
       
       <main className="flex-1 relative flex flex-col ml-20 md:ml-24 font-sans selection:bg-red-100 selection:text-red-600">
         <header className="sticky top-0 z-40 bg-white/40 backdrop-blur-xl border-b border-white/20 px-10 py-5 flex items-center justify-between">
@@ -119,34 +154,96 @@ const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
             </div>
           </div>
           <div className="flex items-center space-x-6 ml-8">
-            <button onClick={onAuthClick} className="text-sm font-black text-slate-600 hover:text-red-600 transition-colors uppercase">Login</button>
-            <button onClick={onAuthClick} className="bg-red-600 text-white px-7 py-3 rounded-2xl text-sm font-black shadow-xl shadow-red-200 hover:bg-red-700 transition-all active:scale-95 uppercase tracking-tighter">Sign Up</button>
+            {!isLoggedIn ? (
+              <>
+                <button onClick={onAuthClick} className="text-sm font-black text-slate-600 hover:text-red-600 transition-colors uppercase">Login</button>
+                <button onClick={onAuthClick} className="bg-red-600 text-white px-7 py-3 rounded-2xl text-sm font-black shadow-xl shadow-red-200 hover:bg-red-700 transition-all active:scale-95 uppercase tracking-tighter">Sign Up</button>
+              </>
+            ) : (
+              <button 
+                onClick={handleLogout} 
+                className="bg-slate-900 text-white px-7 py-3 rounded-2xl text-sm font-black shadow-xl hover:bg-black transition-all active:scale-95 uppercase tracking-tighter"
+              >
+                Logout
+              </button>
+            )}
           </div>
         </header>
 
         {activeView === 'home' && (
           <>
-            <section className="px-12 py-32">
+            <section className="px-12 py-20">
               <h1 className="text-8xl md:text-[9rem] font-black text-slate-900 leading-[0.8] tracking-tighter mb-8 text-nowrap">ESCAPE <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-amber-500 to-emerald-500 uppercase">the norm.</span></h1>
               <p className="text-slate-500 max-w-xl text-xl font-bold">Curated rebel stays. Reimagined luxury. Your journey starts here.</p>
             </section>
+
             <section className="px-12 pb-40">
               <div className="flex items-end justify-between mb-16">
-                <div><h2 className="text-5xl font-black text-slate-900 tracking-tight mb-4">The Collections</h2><p className="text-slate-500 text-lg font-bold">Available in {selectedLocation}</p></div>
-                <div className="flex space-x-3 bg-slate-100 p-2 rounded-3xl border border-slate-200">
-                  {['All', 'Nature', 'Coastal', 'Luxury'].map(t => (
-                    <button key={t} onClick={() => setVibeFilter(t)} className={`px-6 py-3 rounded-2xl text-xs font-black transition-all ${vibeFilter === t ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-white'}`}>{t}</button>
-                  ))}
+                <div>
+                  <h2 className="text-5xl font-black text-slate-900 tracking-tight mb-4">
+                    {selectedHotel ? selectedHotel.hotelName : 'The Collections'}
+                  </h2>
+                  <p className="text-slate-500 text-lg font-bold">
+                    {selectedHotel ? selectedHotel.location : `Available in ${selectedLocation}`}
+                  </p>
                 </div>
+                {selectedHotel ? (
+                  <button 
+                    onClick={() => setSelectedHotel(null)}
+                    className="flex items-center space-x-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-black transition-all active:scale-95 uppercase text-xs tracking-widest"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Back to Hotels</span>
+                  </button>
+                ) : (
+                  <div className="flex space-x-3 bg-slate-100 p-2 rounded-3xl border border-slate-200">
+                    {['All', 'Nature', 'Coastal', 'Luxury'].map(t => (
+                      <button key={t} onClick={() => setVibeFilter(t)} className={`px-6 py-3 rounded-2xl text-xs font-black transition-all ${vibeFilter === t ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-white'}`}>{t}</button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                {filteredRooms.map((room, idx) => (
-                  <motion.div key={idx} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}>
-                    <RoomCard {...room} onBook={() => setBookingRoom(room)} />
-                  </motion.div>
-                ))}
-                {filteredRooms.length === 0 && <p className="col-span-full py-20 text-center text-slate-400 font-bold text-xl italic">No suites found matching your search...</p>}
-              </div>
+
+              {!selectedHotel ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                  {filteredHotels.map((hotel, idx) => (
+                    <motion.div 
+                      key={idx} 
+                      initial={{ opacity: 0, y: 20 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      transition={{ delay: idx * 0.1 }}
+                      onClick={() => handleHotelClick(hotel)}
+                      className="group cursor-pointer"
+                    >
+                      <div className="relative aspect-[4/5] overflow-hidden rounded-[3rem] mb-6 shadow-2xl border-4 border-white transition-all group-hover:scale-[1.02] group-hover:-rotate-1">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
+                        <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+                          <HotelIcon size={64} strokeWidth={1} />
+                        </div>
+                        <div className="absolute bottom-10 left-10 right-10 z-20">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Star className="text-amber-400 fill-amber-400" size={16} />
+                            <span className="text-white font-black text-sm">{hotel.rating || '4.8'}</span>
+                          </div>
+                          <h3 className="text-4xl font-black text-white leading-none tracking-tighter uppercase">{hotel.hotelName}</h3>
+                          <p className="text-white/70 font-bold mt-2 flex items-center space-x-2 uppercase text-xs tracking-widest"><MapPin size={12} /> <span>{hotel.location}</span></p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {filteredHotels.length === 0 && <p className="col-span-full py-20 text-center text-slate-400 font-bold text-xl italic">No hotels found in this location...</p>}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                  {rooms.map((room, idx) => (
+                    <motion.div key={idx} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}>
+                      <RoomCard {...room} onBook={() => setBookingRoom(room)} />
+                    </motion.div>
+                  ))}
+                  {rooms.length === 0 && <p className="col-span-full py-20 text-center text-slate-400 font-bold text-xl italic">This hotel has no rooms available yet...</p>}
+                </div>
+              )}
             </section>
           </>
         )}
@@ -156,26 +253,19 @@ const Home: React.FC<{ onAuthClick: () => void }> = ({ onAuthClick }) => {
             <h1 className="text-6xl font-black text-slate-900 mb-8 tracking-tighter uppercase">My Bookings</h1>
             <div className="grid grid-cols-1 gap-6">
               {userBookings.map((booking) => (
-                <div key={booking.booking_Id} className="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-white flex justify-between items-center shadow-sm">
+                <div key={booking.bookingId} className="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-white flex justify-between items-center shadow-sm">
                   <div>
-                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md mb-2 inline-block uppercase tracking-widest">{booking.room.roomType}</span>
-                    <h3 className="text-2xl font-black text-slate-900">{booking.room.hotel.hotelName}</h3>
+                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md mb-2 inline-block uppercase tracking-widest">{booking.room?.roomType}</span>
+                    <h3 className="text-2xl font-black text-slate-900">{booking.room?.hotel?.hotelName}</h3>
                     <div className="flex space-x-4 mt-2 text-sm font-bold text-slate-500">
-                      <p>IN: {booking.check_In_Date}</p>
-                      <p>OUT: {booking.check_Out_Date}</p>
+                      <p>IN: {booking.checkIn}</p>
+                      <p>OUT: {booking.checkOut}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-6">
-                    <div className="text-right">
-                      <p className="text-xs font-bold text-slate-400 uppercase">Total Paid</p>
-                      <p className="text-2xl font-black text-slate-900">₹{booking.total_Price.toLocaleString('en-IN')}</p>
+                    <div className="px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100">
+                      {booking.status}
                     </div>
-                    <button 
-                      onClick={() => setExtendingBooking(booking)}
-                      className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all active:scale-95 uppercase text-xs tracking-widest"
-                    >
-                      Extend
-                    </button>
                   </div>
                 </div>
               ))}
