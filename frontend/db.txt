@@ -1,0 +1,55 @@
+-- 1. USERS TABLE
+-- Includes date_of_birth to handle backend age validation (Must be = 18)
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    date_of_birth DATE NOT NULL, 
+    role VARCHAR(20) DEFAULT 'ROLE_USER',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. HOTELS TABLE
+-- Amenities stored directly in the table as a comma-separated string
+CREATE TABLE hotels (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    location VARCHAR(100) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    description TEXT,
+    amenities VARCHAR(500) -- e.g., Free WiFi, Swimming Pool, Gym, Spa
+);
+
+-- 3. ROOMS TABLE
+-- Links to Hotel. Amenities specific to the room are stored here.
+CREATE TABLE rooms (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    hotel_id BIGINT NOT NULL,
+    room_number VARCHAR(20) NOT NULL,
+    room_type VARCHAR(50) NOT NULL, -- e.g., 'SINGLE', 'DOUBLE', 'SUITE'
+    price_per_night DECIMAL(10,2) NOT NULL,
+    max_occupancy INT NOT NULL,
+    amenities VARCHAR(500), -- e.g., Ocean View, Mini Bar, King Bed, Balcony
+    
+    -- Foreign Key Constraint
+    CONSTRAINT fk_hotel FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE
+);
+
+-- 4. BOOKINGS TABLE
+-- Handles the core logic for dates, extensions, and pricing
+CREATE TABLE bookings (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    room_id BIGINT NOT NULL,
+    check_in_date DATE NOT NULL,
+    check_out_date DATE NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'CONFIRMED', -- e.g., 'CONFIRMED', 'CANCELLED'
+    booked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Tracks when an extension was made
+    
+    -- Foreign Key Constraints
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_room FOREIGN KEY (room_id) REFERENCES rooms(id)
+);
