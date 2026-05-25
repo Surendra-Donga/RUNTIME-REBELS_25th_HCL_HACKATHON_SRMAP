@@ -22,6 +22,11 @@ public class OwnerController {
         return ownerService.getHotelsByOwner(principal.getName());
     }
 
+    @GetMapping("/analytics/earnings")
+    public ResponseEntity<Double> getEarnings(Principal principal) {
+        return ResponseEntity.ok(ownerService.getEarningsAnalytics(principal.getName()));
+    }
+
     @PostMapping("/add-hotel")
     public ResponseEntity<Hotels> addHotel(@RequestBody Hotels hotel, Principal principal) {
         return ResponseEntity.ok(ownerService.addHotel(hotel, principal.getName()));

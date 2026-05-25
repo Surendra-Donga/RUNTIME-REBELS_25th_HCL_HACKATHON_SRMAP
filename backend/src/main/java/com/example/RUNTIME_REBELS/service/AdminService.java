@@ -1,7 +1,10 @@
 package com.example.RUNTIME_REBELS.service;
 
 import com.example.RUNTIME_REBELS.model.Hotels;
+import com.example.RUNTIME_REBELS.model.Role;
+import com.example.RUNTIME_REBELS.model.Users;
 import com.example.RUNTIME_REBELS.repository.HotelRepository;
+import com.example.RUNTIME_REBELS.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +15,28 @@ public class AdminService {
 
     @Autowired
     private HotelRepository hotelRepository;
+
+    @Autowired
+    private UserRepo userRepo;
+
+    public List<Users> getAllUsers(Role role) {
+        if (role != null) {
+            return userRepo.findByRole(role);
+        }
+        return userRepo.findAll();
+    }
+
+    public Users updateUserRole(Long userId, Role role) {
+        Users user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setRole(role);
+        return userRepo.save(user);
+    }
+
+    public Users toggleUserStatus(Long userId) {
+        Users user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setEnabled(!user.isEnabled());
+        return userRepo.save(user);
+    }
 
     public List<Hotels> getPendingHotels() {
         return hotelRepository.findByApprovedFalse();

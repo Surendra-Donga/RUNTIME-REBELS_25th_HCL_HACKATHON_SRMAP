@@ -39,7 +39,9 @@ public class Hotels {
     @Column(nullable = false)
     private boolean approved = false;
 
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<Room> rooms;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
-
 }
