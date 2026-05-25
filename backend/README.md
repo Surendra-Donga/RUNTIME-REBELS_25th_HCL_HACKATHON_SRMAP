@@ -61,32 +61,30 @@ The database is structured to support complex relationships between users, hotel
 
 ---
 
-## 6. Module Responsibilities & Folder Ownership
+## 6. Layered Architecture & Ownership
 
-### 🧑‍💻 Vamsi (Core Infrastructure & Transactions)
-Responsible for the system's backbone, security, and financial modules.
-*   **Folders**: `security/`, `config/`, `auth/`, `booking/`, `payment/`, `email/`, `exception/`, `util/`
-*   **Key Modules**: JWT Implementation, Security Filter Chain, Transactional logic for Bookings/Payments, Global Exception Handling.
+### 🧑‍💻 Vamsi (Infrastructure & Transactions)
+Responsible for the system's backbone, security, and financial transaction pipeline.
+*   **Packages**: `config/`, `controller/` (Auth, Booking, Payment), `services/` (Auth, Booking, Payment, JWT, Email), `repositories/`, `exception/`, `util/`, `model/` (Infrastructure entities).
+*   **Key Modules**: JWT Implementation, Security Filter Chain, Booking/Payment logic, Global Exception Handling.
 
-### 🧑‍💻 Jayanth (Domain & Management)
-Responsible for the core business domain and management interfaces.
-*   **Folders**: `hotel/`, `room/`, `owner/`, `admin/`, `review/`
-*   **Key Modules**: Hotel Search/Filtering Engine, Approval Workflow, Owner/Admin Dashboards, Review System.
+### 🧑‍💻 Jayanth (Domain Implementation)
+Responsible for the core hotel discovery and management features.
+*   **Packages**: `controller/` (Hotel, Room, Owner, Admin), `services/` (Hotel, Room, Owner, Admin), `model/` (Domain entities).
+*   **Key Modules**: Hotel Search Engine, Approval Workflow, Owner/Admin Dashboards.
 
 ---
 
 ## 7. Team Work Split
 
-| Module | Primary Owner | Secondary |
-| :--- | :--- | :--- |
-| Security & JWT | Vamsi | - |
-| Authentication | Vamsi | - |
-| Booking | Vamsi | Jayanth (Testing) |
-| Payment | Vamsi | - |
-| Hotel & Room | Jayanth | Vamsi (Integration) |
-| Admin/Owner Logic | Jayanth | - |
-| Email & Notifications| Vamsi | - |
-| Validation & Logging | Vamsi | Jayanth (Implementation) |
+| Module | Controllers | Services | Repositories |
+| :--- | :--- | :--- | :--- |
+| **Security/Auth** | AuthController | AuthService, JWT, UserDetails | UserRepo |
+| **Booking** | BookingController | BookingService | BookingRepo |
+| **Payment** | PaymentController | PaymentService | PaymentRepo |
+| **Hotel/Room** | *Jayanth Implementation* | *Jayanth Implementation* | *Shared Repo* |
+| **Admin/Owner** | *Jayanth Implementation* | *Jayanth Implementation* | *Shared Repo* |
+| **Email/Util** | - | EmailService | - |
 
 ---
 
@@ -139,21 +137,13 @@ All APIs must follow a standard JSON response structure for consistency:
 ```text
 backend/
 ├── src/main/java/com/example/RUNTIME_REBELS/
-│   ├── config/          # Vamsi: Global Configurations
-│   ├── security/        # Vamsi: JWT, Security Filters
-│   ├── auth/            # Vamsi: Login/Registration Logic
-│   ├── booking/         # Vamsi: Reservation Logic
-│   ├── payment/         # Vamsi: Payment Integration
-│   ├── email/           # Vamsi: Mail Services
-│   ├── exception/       # Vamsi: Global Exception Handling
-│   ├── hotel/           # Jayanth: Hotel Management
-│   ├── room/            # Jayanth: Room Management
-│   ├── owner/           # Jayanth: Owner Dashboard APIs
-│   ├── admin/           # Jayanth: Admin Moderation APIs
-│   ├── review/          # Jayanth: User Reviews
-│   ├── Models/          # Shared: Entities (Managed by Vamsi)
-│   ├── Repository/      # Shared: Data Access
-│   └── util/            # Vamsi: Common Utilities
+│   ├── config/          # Global Configurations & Security Filters
+│   ├── controller/      # REST API Controllers
+│   ├── services/        # Business Logic Services
+│   ├── repositories/    # JPA Data Access Interfaces
+│   ├── model/           # JPA Entities and Enums
+│   ├── exception/       # Global Exception Handling
+│   └── util/            # Common Utilities
 └── src/main/resources/
     └── application.properties
 ```
